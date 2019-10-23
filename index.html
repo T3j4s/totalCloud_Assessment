@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="./css/bootstrap.min.css" />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link
+      href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+      rel="stylesheet"
+      integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN"
+      crossorigin="anonymous"
+    />
+  </head>
+  <style>
+    * {
+      padding: 0px;
+      margin: 0px;
+    }
+    i {
+      background-color: #f7f1f1;
+      padding: 2px 6px;
+    }
+    th {
+      text-align: left;
+    }
+  </style>
+  <body>
+    <div class="container-fluid">
+      <table class="table table-bordered table-responsive-md" id="dataTable">
+        <thead>
+          <tr>
+            <th colspan="2" scope="col">Intern Assignment</th>
+            <th scope="col">Start Date</th>
+            <th scope="col">Due Date</th>
+          </tr>
+        </thead>
+        <tbody id="dataTableBody"></tbody>
+      </table>
+    </div>
+    <br />
+    <br />
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-12">
+          <div id="timeline" style="height:500px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <script
+      type="text/javascript"
+      src="https://www.gstatic.com/charts/loader.js"
+    ></script>
+    <script src="./js/jquery.min.js"></script>
+    <script src="./js/bootstrap.bundle.min.js"></script>
+    <script src="./js/moment.js"></script>
+    <script>
+      let chartData = [];
+
+      $(document).ready(function() {
+        var settings = {
+          url: "https://totalcloud-static.s3.amazonaws.com/intern.json",
+          method: "GET",
+          async: true,
+          crossDomain: true,
+          headers: {
+            "Access-Control-Allow-Origin":
+              "https://totalcloud-static.s3.amazonaws.com",
+            "Access-Control-Allow-Methods": "GET"
+          }
+        };
+        $.ajax(settings)
+          .done(function(response) {
+            console.log("Data Successfully Fetched");
+
+            $(response).each(function(i, user) {
+              chartData.push([
+                user.id.toString(),
+                user.name,
+                new Date(moment(user.start, "DD-MM-YYYY").format("Y,MM,DD")),
+                new Date(moment(user.end, "DD-MM-YYYY").format("Y,MM,DD"))
+              ]);
+              $("#dataTableBody").append(
+                $("<tr>")
+                  .append($("<td>").append(user.id))
+                  .append(
+                    $("<td>")
+                      .append("<input type='checkbox'>")
+                      .append("<i class='fa fa fa-user'>")
+                      .append("&nbsp;" + user.name)
+                  )
+                  .append($("<td>").append(user.start))
+                  .append($("<td>").append(user.end))
+              );
+            });
+          })
+          .fail(function(err) {
+            console.log("Unable to connect to server");
+          });
+      });
+
+      google.charts.load("current", { packages: ["timeline"] });
+      google.charts.setOnLoadCallback(drawChart);
+      function drawChart() {
+        var container = document.getElementById("timeline");
+        var chart = new google.visualization.Timeline(container);
+        var dataTable = new google.visualization.DataTable();
+
+        dataTable.addColumn({ type: "string", id: "id" });
+        dataTable.addColumn({ type: "string", id: "name" });
+        dataTable.addColumn({ type: "date", id: "start" });
+        dataTable.addColumn({ type: "date", id: "end" });
+        dataTable.addRows(chartData);
+
+        var options = {
+          timeline: {
+            showRowLabels: false,
+            groupByRowLabel: false,
+            singleColor: "#ef9a9a"
+          },
+          hAxis: {
+            format: "d"
+          }
+        };
+        chart.draw(dataTable, options);
+      }
+    </script>
+  </body>
+</html>
